@@ -3,99 +3,209 @@ let markersLayer = L.layerGroup();
 
 const panelEl = () => document.getElementById("infoPanel");
 const desktopToggleBtn = () => document.getElementById("desktopToggleBtn");
-const mobileSheet = () => document.getElementById("mobileSheet");
+const mobileSheetEl = () => document.getElementById("mobileSheet");
+const mobileSheetBodyEl = () => document.getElementById("mobileSheetBody");
+const mobileBackdropEl = () => document.getElementById("mobileBackdrop");
+
+let mobileHideTimer = null;
+let mobileState = "hidden"; // hidden | peek | half | full
+let currentDay = null;
 
 function isMobileView() {
   return window.innerWidth <= 768;
 }
 
-/* ---------- DESKTOP PANEL ---------- */
+function refreshMapSize() {
+  if (!map) return;
+  requestAnimationFrame(() => map.invalidateSize());
+}
+
+/* ---------- DESKTOP ---------- */
 function expandDesktopPanel() {
-  panelEl().classList.remove("is-collapsed");
+  panelEl().classList.remove("panel-collapsed");
   const btn = desktopToggleBtn();
   btn.classList.remove("is-hidden");
-  btn.classList.remove("panel-collapsed");
+  btn.classList.add("panel-open");
   btn.textContent = "→";
-  setTimeout(() => map.invalidateSize(), 250);
+  setTimeout(refreshMapSize, 240);
 }
 
 function collapseDesktopPanel() {
-  panelEl().classList.add("is-collapsed");
+  panelEl().classList.add("panel-collapsed");
   const btn = desktopToggleBtn();
   btn.classList.remove("is-hidden");
-  btn.classList.add("panel-collapsed");
+  btn.classList.remove("panel-open");
   btn.textContent = "←";
-  setTimeout(() => map.invalidateSize(), 250);
+  setTimeout(refreshMapSize, 240);
 }
 
 function hideDesktopToggleUntilFirstOpen() {
   desktopToggleBtn().classList.add("is-hidden");
 }
 
-/* ---------- MOBILE SHEET ---------- */
-function showMobileSheet() {
-  const sheet = mobileSheet();
-  sheet.classList.remove("is-hidden");
-  sheet.classList.remove("collapsed", "expanded");
-  sheet.classList.add("half");
-  setTimeout(() => map.invalidateSize(), 250);
+/* ---------- MOBILE ---------- */
+function getMobileOffsets() {
+  const vh = window.innerHeight;
+  return {
+    hidden: vh + 24,
+    peek: Math.round(vh * 0.66),
+    half: Math.round(vh * 0.38),
+    full: 84
+  };
 }
 
-function hideMobileSheet() {
-  const sheet = mobileSheet();
-  sheet.classList.add("is-hidden");
-  sheet.classList.remove("collapsed", "half", "expanded");
-  setTimeout(() => map.invalidateSize(), 250);
+function setMobileBackdrop(isVisible) {
+  const backdrop = mobileBackdropEl();
+  if (!backdrop) return;
+  backdrop.classList.toggle('visible', !!isVisible);
 }
 
-function setMobileSheetState(state) {
-  const sheet = mobileSheet();
-  sheet.classList.remove("collapsed", "half", "expanded");
-  sheet.classList.add(state);
-  setTimeout(() => map.invalidateSize(), 250);
+function setMobilePosition(px, animate = true) {
+  const sheet = mobileSheetEl();
+  if (!sheet) return;
+  sheet.style.transition = animate ? "transform 320ms cubic-bezier(.22,.9,.24,1)" : "none";
+  sheet.style.transform = `translateY(${px}px)`;
+}
+
+function openMobileSheet(state = "peek", animate = true) {
+  const sheet = mobileSheetEl();
+  const offsets = getMobileOffsets();
+  if (!sheet) return;
+
+  if (mobileHideTimer) {
+    clearTimeout(mobileHideTimer);
+    mobileHideTimer = null;
+  }
+
+  mobileState = state;
+  sheet.classList.remove("hidden");
+  sheet.dataset.state = state;
+  setMobilePosition(offsets[state], animate);
+  setMobileBackdrop(state !== 'hidden');
+  document.body.classList.add('has-mobile-sheet');
+  setTimeout(refreshMapSize, 340);
+}
+
+function closeMobileSheet() {
+  const sheet = mobileSheetEl();
+  const offsets = getMobileOffsets();
+  if (!sheet) return;
+
+  if (mobileHideTimer) {
+    clearTimeout(mobileHideTimer);
+    mobileHideTimer = null;
+  }
+
+  mobileState = "hidden";
+  sheet.dataset.state = 'hidden';
+  setMobileBackdrop(false);
+  setMobilePosition(offsets.hidden, true);
+
+  mobileHideTimer = setTimeout(() => {
+    sheet.classList.add("hidden");
+    document.body.classList.remove('has-mobile-sheet');
+    mobileHideTimer = null;
+    refreshMapSize();
+  }, 330);
 }
 
 function bindMobileSheetGestures() {
-  const sheet = mobileSheet();
+  const sheet = mobileSheetEl();
   const handle = document.getElementById("sheetHandle");
+  const header = document.getElementById("mobileSheetHeader");
+  const body = mobileSheetBodyEl();
 
   let startY = 0;
-  let endY = 0;
+  let startOffset = 0;
+  let currentOffset = 0;
+  let dragging = false;
 
-  function onStart(y) {
-    startY = y;
-    endY = y;
+  function offsets() {
+    return getMobileOffsets();
   }
 
-  function onMove(y) {
-    endY = y;
+  function getOffsetForState(state) {
+    return offsets()[state];
   }
 
-  function onEnd() {
-    const dy = endY - startY;
-    if (Math.abs(dy) < 30) return;
+  function nearestState(offset) {
+    const o = offsets();
+    const snapPoints = [
+      ["full", o.full],
+      ["half", o.half],
+      ["peek", o.peek],
+      ["hidden", o.hidden]
+    ];
 
-    if (dy < 0) {
-      if (sheet.classList.contains("collapsed")) setMobileSheetState("half");
-      else if (sheet.classList.contains("half")) setMobileSheetState("expanded");
-    } else {
-      if (sheet.classList.contains("expanded")) setMobileSheetState("half");
-      else if (sheet.classList.contains("half")) setMobileSheetState("collapsed");
-      else if (sheet.classList.contains("collapsed")) hideMobileSheet();
+    let nearest = "peek";
+    let nearestDist = Infinity;
+    for (const [name, value] of snapPoints) {
+      const d = Math.abs(offset - value);
+      if (d < nearestDist) {
+        nearest = name;
+        nearestDist = d;
+      }
     }
+    return nearest;
   }
 
-  handle.addEventListener(
-    "touchstart",
-    (e) => onStart(e.touches[0].clientY),
-    { passive: true }
-  );
-  handle.addEventListener(
-    "touchmove",
-    (e) => onMove(e.touches[0].clientY),
-    { passive: true }
-  );
-  handle.addEventListener("touchend", onEnd, { passive: true });
+  function startDrag(y) {
+    if (sheet.classList.contains("hidden")) return;
+    dragging = true;
+    startY = y;
+    startOffset = getOffsetForState(mobileState === "hidden" ? "peek" : mobileState);
+    currentOffset = startOffset;
+    sheet.style.transition = "none";
+  }
+
+  function moveDrag(y) {
+    if (!dragging) return;
+    const o = offsets();
+    const delta = y - startY;
+    currentOffset = startOffset + delta;
+
+    if (currentOffset < o.full) currentOffset = o.full;
+    if (currentOffset > o.hidden) currentOffset = o.hidden;
+
+    sheet.style.transform = `translateY(${currentOffset}px)`;
+  }
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+
+    const next = nearestState(currentOffset);
+    if (next === 'hidden') closeMobileSheet();
+    else openMobileSheet(next, true);
+  }
+
+  [handle, header].forEach((el) => {
+    if (!el) return;
+    el.addEventListener("touchstart", (e) => {
+      if (!e.touches || e.touches.length !== 1) return;
+      startDrag(e.touches[0].clientY);
+    }, { passive: true });
+
+    el.addEventListener("touchmove", (e) => {
+      if (!e.touches || e.touches.length !== 1) return;
+      moveDrag(e.touches[0].clientY);
+    }, { passive: true });
+
+    el.addEventListener("touchend", endDrag, { passive: true });
+  });
+
+  if (body) {
+    body.addEventListener('scroll', () => {
+      if (mobileState === 'peek' && body.scrollTop > 8) {
+        openMobileSheet('half', true);
+      }
+    }, { passive: true });
+  }
+
+  const backdrop = mobileBackdropEl();
+  if (backdrop) {
+    backdrop.addEventListener('click', closeMobileSheet);
+  }
 }
 
 /* ---------- ICONS ---------- */
@@ -144,14 +254,10 @@ const day1 = {
       subtitle: "Trip starting point",
       latlng: [22.379924625747798, 114.18855144136442],
       story: "Starting point for the itinerary in Sha Tin.",
-      steps: [
-        "Walk to Sha Tin Station to begin Day 1."
-      ],
+      steps: ["Walk to Sha Tin Station to begin Day 1."],
       photos: [],
       audio: [],
-      tips: [
-        "Stay close to transport hubs to reduce extra travel."
-      ]
+      tips: ["Stay close to transport hubs to reduce extra travel."]
     },
     {
       id: "d1-shatin-mtr",
@@ -166,9 +272,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "MTR is a lower-impact transport option than private cars."
-      ]
+      tips: ["MTR is a lower-impact transport option than private cars."]
     },
     {
       id: "d1-tp-mtr",
@@ -183,9 +287,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Clear transfer hubs reduce confusion and random detours."
-      ]
+      tips: ["Clear transfer hubs reduce confusion and random detours."]
     },
     {
       id: "d1-bus-terminus",
@@ -200,9 +302,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Bus + MTR is lower-impact than taxi transfers."
-      ]
+      tips: ["Bus + MTR is lower-impact than taxi transfers."]
     },
     {
       id: "d1-fongmapo",
@@ -234,9 +334,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Keep offerings minimal and avoid unnecessary waste."
-      ]
+      tips: ["Keep offerings minimal and avoid unnecessary waste."]
     },
     {
       id: "d1-eatwell",
@@ -245,14 +343,10 @@ const day1 = {
       subtitle: "Low-carbon lunch stop",
       latlng: [22.446628160768036, 114.16952258561489],
       story: "A sustainability-focused lunch stop with a farm-to-table philosophy.",
-      steps: [
-        "Walk from Tai Po Market area to Eat Well Canteen / Green Hub."
-      ],
+      steps: ["Walk from Tai Po Market area to Eat Well Canteen / Green Hub."],
       photos: [],
       audio: [],
-      tips: [
-        "Plant-forward meals reduce food footprint."
-      ]
+      tips: ["Plant-forward meals reduce food footprint."]
     },
     {
       id: "d1-wantau",
@@ -261,9 +355,7 @@ const day1 = {
       subtitle: "Transfer point toward Wun Yiu / town cluster",
       latlng: [22.446820984381688, 114.16809774972371],
       story: "A mapped transport point used in your Day 1 route structure.",
-      steps: [
-        "Use this point as one of the route transition markers on the itinerary."
-      ],
+      steps: ["Use this point as one of the route transition markers on the itinerary."],
       photos: [],
       audio: [],
       tips: []
@@ -281,9 +373,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Heritage access via shared transport supports sustainable tourism."
-      ]
+      tips: ["Heritage access via shared transport supports sustainable tourism."]
     },
     {
       id: "d1-wunyiu",
@@ -298,9 +388,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Preserving craft heritage strengthens local identity."
-      ]
+      tips: ["Preserving craft heritage strengthens local identity."]
     },
     {
       id: "d1-manmo",
@@ -316,9 +404,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Living markets are part of community heritage."
-      ]
+      tips: ["Living markets are part of community heritage."]
     },
     {
       id: "d1-railway",
@@ -327,14 +413,10 @@ const day1 = {
       subtitle: "Walkable old-town cluster",
       latlng: [22.44780136076287, 114.1644481670936],
       story: "A transport-history museum that fits well into the old-town walking cluster.",
-      steps: [
-        "Walk from Fu Shin Street area to Hong Kong Railway Museum."
-      ],
+      steps: ["Walk from Fu Shin Street area to Hong Kong Railway Museum."],
       photos: [],
       audio: [],
-      tips: [
-        "Walking between clustered stops minimizes transport impact."
-      ]
+      tips: ["Walking between clustered stops minimizes transport impact."]
     },
     {
       id: "d1-southview",
@@ -343,9 +425,7 @@ const day1 = {
       subtitle: "Bus stop toward Billow",
       latlng: [22.438545701934256, 114.18316901469129],
       story: "Transit point used on the route toward the Billow dinner stop.",
-      steps: [
-        "Use this stop as a route marker for the Billow direction."
-      ],
+      steps: ["Use this stop as a route marker for the Billow direction."],
       photos: [],
       audio: [],
       tips: []
@@ -357,9 +437,7 @@ const day1 = {
       subtitle: "Bus stop near Billow corridor",
       latlng: [22.435675997605035, 114.18350299700893],
       story: "Another route marker in the Tai Po Kau / Billow area.",
-      steps: [
-        "Use this stop as part of the Billow route explanation."
-      ],
+      steps: ["Use this stop as part of the Billow route explanation."],
       photos: [],
       audio: [],
       tips: []
@@ -377,9 +455,7 @@ const day1 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Highlight plant-forward options where possible."
-      ]
+      tips: ["Highlight plant-forward options where possible."]
     }
   ]
 };
@@ -397,14 +473,10 @@ const day2 = {
       subtitle: "Trip starting point",
       latlng: [22.379924625747798, 114.18855144136442],
       story: "Start and end point for Day 2 in Sha Tin.",
-      steps: [
-        "Walk from hotel to nearby museum / station / mall cluster."
-      ],
+      steps: ["Walk from hotel to nearby museum / station / mall cluster."],
       photos: [],
       audio: [],
-      tips: [
-        "Compact itineraries reduce travel fatigue."
-      ]
+      tips: ["Compact itineraries reduce travel fatigue."]
     },
     {
       id: "d2-shatin-mtr",
@@ -413,14 +485,10 @@ const day2 = {
       subtitle: "Main MTR anchor point",
       latlng: [22.384057872413763, 114.18796060900773],
       story: "Primary MTR node in the Sha Tin part of the itinerary.",
-      steps: [
-        "Walk: Royal Park Hotel ↔ Sha Tin Station"
-      ],
+      steps: ["Walk: Royal Park Hotel ↔ Sha Tin Station"],
       photos: [],
       audio: [],
-      tips: [
-        "MTR is a low-impact urban transport mode."
-      ]
+      tips: ["MTR is a low-impact urban transport mode."]
     },
     {
       id: "d2-heritage",
@@ -436,9 +504,7 @@ const day2 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Museums preserve community memory and identity."
-      ]
+      tips: ["Museums preserve community memory and identity."]
     },
     {
       id: "d2-garden",
@@ -447,14 +513,10 @@ const day2 = {
       subtitle: "Scenic walking stop",
       latlng: [22.37731973054073, 114.1901384805288],
       story: "A low-fatigue green stop that fits naturally into the Sha Tin walking loop.",
-      steps: [
-        "Walk between museum / temple / mall cluster and the promenade."
-      ],
+      steps: ["Walk between museum / temple / mall cluster and the promenade."],
       photos: [],
       audio: [],
-      tips: [
-        "Public green and waterfront spaces improve walkability."
-      ]
+      tips: ["Public green and waterfront spaces improve walkability."]
     },
     {
       id: "d2-chekung",
@@ -463,14 +525,10 @@ const day2 = {
       subtitle: "Updated cultural stop",
       latlng: [22.3749, 114.1866],
       story: "Chosen instead of Tao Fong Shan because it is more convenient and reduces visitor fatigue.",
-      steps: [
-        "Walk from museum area toward Che Kung Temple."
-      ],
+      steps: ["Walk from museum area toward Che Kung Temple."],
       photos: [],
       audio: [],
-      tips: [
-        "Shorter walking loops reduce unnecessary transport."
-      ]
+      tips: ["Shorter walking loops reduce unnecessary transport."]
     },
     {
       id: "d2-ntp",
@@ -485,14 +543,12 @@ const day2 = {
       ],
       photos: [],
       audio: [],
-      tips: [
-        "Group nearby stops together to reduce travel distance."
-      ]
+      tips: ["Group nearby stops together to reduce travel distance."]
     }
   ]
 };
 
-/* ---------- RENDER STOP CONTENT ---------- */
+/* ---------- RENDER ---------- */
 function renderStopContent(dayObj, stop) {
   // desktop
   document.getElementById("badge").textContent = dayObj.name;
@@ -605,18 +661,22 @@ function openStop(dayObj, stop) {
   renderStopContent(dayObj, stop);
 
   if (isMobileView()) {
-    showMobileSheet();
+    openMobileSheet("half", true);
+    map.flyTo(stop.latlng, Math.max(map.getZoom(), 15), { duration: 0.45 });
   } else {
     expandDesktopPanel();
+    map.flyTo(stop.latlng, Math.max(map.getZoom(), 15), { duration: 0.45 });
   }
 }
 
 /* ---------- MAP ---------- */
 function showDay(dayObj) {
+  currentDay = dayObj;
   markersLayer.clearLayers();
-  map.setView(dayObj.center, dayObj.zoom);
 
+  const bounds = [];
   dayObj.stops.forEach((stop) => {
+    bounds.push(stop.latlng);
     const marker = L.marker(stop.latlng, {
       icon: getIcon(stop.category),
       keyboard: true,
@@ -626,6 +686,13 @@ function showDay(dayObj) {
     marker.on("click", () => openStop(dayObj, stop));
     marker.bindTooltip(stop.title, { direction: "top", opacity: 0.95 });
   });
+
+  if (bounds.length) {
+    const pad = isMobileView() ? [24, 120] : [40, 40];
+    map.fitBounds(bounds, { padding: pad, maxZoom: dayObj.zoom || 15 });
+  } else {
+    map.setView(dayObj.center, dayObj.zoom);
+  }
 }
 
 /* ---------- INIT ---------- */
@@ -646,42 +713,37 @@ function init() {
     day1Btn.classList.add("active");
     day2Btn.classList.remove("active");
     showDay(day1);
-
-    if (isMobileView()) {
-      hideMobileSheet();
-    } else {
-      collapseDesktopPanel();
-      hideDesktopToggleUntilFirstOpen();
-    }
+    isMobileView() ? closeMobileSheet() : (collapseDesktopPanel(), hideDesktopToggleUntilFirstOpen());
   });
 
   day2Btn.addEventListener("click", () => {
     day2Btn.classList.add("active");
     day1Btn.classList.remove("active");
     showDay(day2);
-
-    if (isMobileView()) {
-      hideMobileSheet();
-    } else {
-      collapseDesktopPanel();
-      hideDesktopToggleUntilFirstOpen();
-    }
+    isMobileView() ? closeMobileSheet() : (collapseDesktopPanel(), hideDesktopToggleUntilFirstOpen());
   });
 
   document.getElementById("desktopToggleBtn").addEventListener("click", () => {
-    const collapsed = panelEl().classList.contains("is-collapsed");
-    if (collapsed) expandDesktopPanel();
+    if (panelEl().classList.contains("panel-collapsed")) expandDesktopPanel();
     else collapseDesktopPanel();
   });
 
-  document.getElementById("mobileCloseBtn").addEventListener("click", hideMobileSheet);
+  document.getElementById("mobileCloseBtn").addEventListener("click", closeMobileSheet);
 
   bindMobileSheetGestures();
+  window.addEventListener("resize", () => {
+    refreshMapSize();
+    if (!map || !currentDay) return;
+    if (isMobileView() && mobileState !== 'hidden') {
+      setMobilePosition(getMobileOffsets()[mobileState], false);
+    }
+  });
 
   showDay(day1);
 
   if (isMobileView()) {
-    hideMobileSheet();
+    mobileSheetEl().classList.add("hidden");
+    mobileSheetEl().style.transform = `translateY(${window.innerHeight + 24}px)`;
   } else {
     collapseDesktopPanel();
     hideDesktopToggleUntilFirstOpen();

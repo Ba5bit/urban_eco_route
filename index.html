@@ -15,7 +15,7 @@
   <header class="topbar">
     <div>
       <div class="title">HK Low-Carbon Digital Tour</div>
-      <div class="subtitle">Interactive map prototype</div>
+      <div class="subtitle">Clean city guide for a relaxed low-carbon visit</div>
     </div>
 
     <div class="tabs">
@@ -26,12 +26,13 @@
 
   <main class="layout">
     <section id="map"></section>
+    <div id="mobileBackdrop" class="mobileBackdrop"></div>
 
-    <!-- Desktop floating toggle -->
+    <!-- Desktop toggle -->
     <button id="desktopToggleBtn" class="desktopToggleBtn is-hidden" aria-label="Toggle details">←</button>
 
     <!-- Desktop side panel -->
-    <aside class="panel is-collapsed" id="infoPanel">
+    <aside id="infoPanel" class="panel panel-collapsed">
       <div class="panelInner">
         <div class="stopHead">
           <div class="headText">
@@ -69,10 +70,10 @@
     </aside>
 
     <!-- Mobile bottom sheet -->
-    <section id="mobileSheet" class="mobileSheet is-hidden collapsed">
+    <section id="mobileSheet" class="mobileSheet hidden">
       <div id="sheetHandle" class="sheetHandle"></div>
 
-      <div class="mobileSheetHeader">
+      <div id="mobileSheetHeader" class="mobileSheetHeader">
         <div class="mobileSheetTitleWrap">
           <div id="mobileBadge" class="badge">Day 1 (Tai Po)</div>
           <h2 id="mobileTitle">Title</h2>
@@ -81,7 +82,7 @@
         <button id="mobileCloseBtn" class="mobileCloseBtn" aria-label="Close">✕</button>
       </div>
 
-      <div class="mobileSheetBody">
+      <div id="mobileSheetBody" class="mobileSheetBody">
         <section class="card">
           <h3>1-minute story</h3>
           <p id="mobileStory"></p>
