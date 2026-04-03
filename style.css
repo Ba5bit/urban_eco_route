@@ -671,7 +671,7 @@ html,body{font-family:"Manrope",Inter,"Segoe UI",Arial,sans-serif}
     linear-gradient(135deg, rgba(255,255,255,.96), rgba(250,248,243,.88)),
     radial-gradient(circle at top right, rgba(216,138,44,.10), transparent 28%);
 }
-.heroCopy{display:flex;flex-direction:column;justify-content:center;min-height:420px}
+.heroCopy{display:flex;flex-direction:column;justify-content:center;min-height:340px}
 .heroCopy h1{
   margin:10px 0 16px;
   font-size:clamp(2.2rem,4.3vw,4rem);
@@ -826,11 +826,7 @@ html,body{font-family:"Manrope",Inter,"Segoe UI",Arial,sans-serif}
   line-height:1.6;
   color:var(--muted);
 }
-.highlightsSection{
-  display:grid;
-  grid-template-columns:minmax(280px,.9fr) minmax(0,1.1fr);
-  gap:22px;
-}
+.highlightsSection{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
 .featureListCard,
 .imageScrollerCard,
 .explainCard{
@@ -901,11 +897,7 @@ html,body{font-family:"Manrope",Inter,"Segoe UI",Arial,sans-serif}
   font-size:.92rem;
   line-height:1.5;
 }
-.websiteToolsSection{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:22px;
-}
+.websiteToolsSection{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
 .explainCard h3{
   margin:8px 0 10px;
   font-size:1.16rem;
@@ -918,7 +910,7 @@ html,body{font-family:"Manrope",Inter,"Segoe UI",Arial,sans-serif}
 .mapShowcaseCard{
   grid-column:1 / -1;
   position:relative;
-  min-height:340px;
+  min-height:280px;
   background:
     linear-gradient(135deg, rgba(255,251,246,.92), rgba(255,251,246,.36)),
     url("./assets/map-day1.png") center/cover no-repeat;
@@ -931,8 +923,8 @@ html,body{font-family:"Manrope",Inter,"Segoe UI",Arial,sans-serif}
 .mapShowcaseContent{
   position:relative;
   z-index:1;
-  max-width:700px;
-  padding:30px;
+  max-width:620px;
+  padding:26px;
 }
 .mapShowcaseContent p{
   margin:0 0 18px;
