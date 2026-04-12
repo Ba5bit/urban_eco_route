@@ -603,8 +603,8 @@ const day2 = {
         "Continue the walk along the water if you want a longer low-effort Sha Tin loop."
       ],
       photos: [
-        "/assets/photos/shing_mun_promenade_1.jpg",
-        "/assets/photos/shing_mun_promenade_2.jpg"
+        "./assets/photos/shing_mun_promenade_1.jpg",
+        "./assets/photos/shing_mun_promenade_2.jpg"
       ],
       footprint: "Estimated footprint: 0.1-0.4 kg CO2e when visited as part of the existing Sha Tin walking cluster.",
       tips: [
