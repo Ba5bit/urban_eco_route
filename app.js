@@ -251,7 +251,7 @@ function getIcon(category) {
 /* ---------- DATA ---------- */
 const day1 = {
   name: "Day 1 (Tai Po)",
-  color: "#d97d2f",
+  color: "#3e6b33",
   center: [22.4465, 114.1698],
   zoom: 14,
   stops: [
@@ -510,7 +510,7 @@ const day1 = {
 
 const day2 = {
   name: "Day 2 (Sha Tin)",
-  color: "#e5ac3a",
+  color: "#7ea35a",
   center: [22.3798, 114.1878],
   zoom: 15,
   stops: [
