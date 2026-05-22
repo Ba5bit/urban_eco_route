@@ -1,6 +1,6 @@
-# Urban Eco Route
+# Roots & Routes
 
-Urban Eco Route is a static interactive travel guide for exploring Sha Tin and Tai Po through a lower-impact, public-transport-friendly itinerary. The site combines a landing page, an interactive Leaflet map, detailed stop pages, photo galleries, audio guides, and optional 360 panorama views to help visitors plan a slower and more sustainable two-day route.
+Roots & Routes is a static interactive travel guide for exploring Sha Tin and Tai Po through a lower-impact, public-transport-friendly itinerary. The site combines a landing page, an interactive Leaflet map, detailed stop pages, photo galleries, audio guides, and optional 360 panorama views to help visitors plan a slower and more sustainable two-day route.
 
 ## Project Overview
 
@@ -81,7 +81,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/static.y
 ## Project Structure
 
 ```text
-urban_eco_route/
+roots-and-routes/
 |-- .github/
 |   `-- workflows/
 |       `-- static.yml
