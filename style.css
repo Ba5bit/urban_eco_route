@@ -183,18 +183,21 @@ body.lightbox-open{overflow:hidden}
   background:rgba(16,24,32,.82);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
+  padding:18px;
 }
-.panoramaViewer.is-open{display:block}
+.panoramaViewer.is-open{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
 body.panorama-open{overflow:hidden}
 .panoramaChrome{
-  position:absolute;
-  top:18px;
-  left:18px;
-  right:18px;
+  position:relative;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:16px;
+  flex:0 0 auto;
   z-index:2;
 }
 .panoramaMeta{
@@ -207,8 +210,9 @@ body.panorama-open{overflow:hidden}
 .panoramaTitle{font-size:15px;font-weight:700}
 .panoramaCounter{font-size:13px;opacity:.82;margin-top:2px}
 .panoramaStage{
-  position:absolute;
-  inset:88px 88px 32px 88px;
+  position:relative;
+  flex:1 1 auto;
+  min-height:0;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -332,11 +336,10 @@ body.panorama-open{overflow:hidden}
   .lightboxIconBtn{width:42px;height:42px;font-size:20px}
   .lightboxStage{inset:76px 12px 18px 12px}
   .lightboxImage{border-radius:18px}
-  .panoramaChrome{top:12px;left:12px;right:12px}
+  .panoramaViewer{padding:12px 12px 18px;gap:12px}
   .panoramaMeta{padding:10px 12px;border-radius:16px;max-width:calc(100% - 60px)}
   .panoramaTitle{font-size:14px}
   .panoramaCounter{font-size:12px}
-  .panoramaStage{inset:76px 12px 18px 12px}
   .panoramaCanvas{border-radius:18px}
   .panoramaHint{bottom:12px;font-size:.76rem;padding:9px 12px}
   .lightboxNav{width:42px;height:42px;font-size:28px;top:50%;bottom:auto;transform:translateY(-50%)}
